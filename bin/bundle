@@ -27,7 +27,7 @@ m = Module.new do
     extract_version_from_args
   end
 
-  def extract_version_from_args # rubocop:disable Metrics/MethodLength
+  def extract_version_from_args
     bundler_version = nil
     update_index = nil
 
@@ -89,7 +89,7 @@ m = Module.new do
     activate_bundler
   end
 
-  def activate_bundler # rubocop:disable Metrics/MethodLength
+  def activate_bundler
     gem_error = activation_error_handling do
       gem 'bundler', bundler_requirement
     end
@@ -98,9 +98,7 @@ m = Module.new do
     require_error = activation_error_handling do
       require 'bundler/version'
     end
-    if require_error.nil? && Gem::Requirement.new(bundler_requirement).satisfied_by?(Gem::Version.new(Bundler::VERSION))
-      return
-    end
+    return if require_error.nil? && Gem::Requirement.new(bundler_requirement).satisfied_by?(Gem::Version.new(Bundler::VERSION))
 
     warn <<~WARNING
       Activating bundler (#{bundler_requirement}) failed:
