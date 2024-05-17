@@ -22,18 +22,24 @@ m = Module.new do
   end
 
   def cli_arg_version
-    return unless invoked_as_script? # don't want to hijack other binstubs
-    return unless 'update'.start_with?(ARGV.first || ' ') # must be running `bundle update`
+    return unless invoked_as_script? && 'update'.start_with?(ARGV.first || ' ')
 
+    extract_version_from_args
+  end
+
+  def extract_version_from_args # rubocop:disable Metrics/MethodLength
     bundler_version = nil
     update_index = nil
-    ARGV.each_with_index do |a, i|
-      bundler_version = a if update_index && update_index.succ == i && a.match?(Gem::Version::ANCHORED_VERSION_PATTERN)
-      next unless a =~ /\A--bundler(?:[= ](#{Gem::Version::VERSION_PATTERN}))?\z/
 
-      bundler_version = Regexp.last_match(1)
-      update_index = i
+    ARGV.each_with_index do |a, i|
+      if update_index && update_index.succ == i && a.match?(Gem::Version::ANCHORED_VERSION_PATTERN)
+        bundler_version = a
+      elsif a =~ /\A--bundler(?:[= ](#{Gem::Version::VERSION_PATTERN}))?\z/
+        bundler_version = Regexp.last_match(1)
+        update_index = i
+      end
     end
+
     bundler_version
   end
 
@@ -83,7 +89,7 @@ m = Module.new do
     activate_bundler
   end
 
-  def activate_bundler
+  def activate_bundler # rubocop:disable Metrics/MethodLength
     gem_error = activation_error_handling do
       gem 'bundler', bundler_requirement
     end
@@ -96,7 +102,13 @@ m = Module.new do
       return
     end
 
-    warn "Activating bundler (#{bundler_requirement}) failed:\n#{gem_error.message}\n\nTo install the version of bundler this project requires, run `gem install bundler -v '#{bundler_requirement}'`"
+    warn <<~WARNING
+      Activating bundler (#{bundler_requirement}) failed:
+      #{gem_error.message}
+
+      To install the version of bundler this project requires, run#{' '}
+      `gem install bundler -v '#{bundler_requirement}'`
+    WARNING
     exit 42
   end
 
